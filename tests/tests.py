@@ -27,6 +27,24 @@ class TestExpenseTracker(unittest.TestCase):
         self.assertEqual(expenses[0]["description"], "Test Lunch")
         self.assertEqual(expenses[0]["amount"], 25.90)
 
+    def test_add_expense_with_empty_description(self):
+        # Users cannot add an expense with empty description
+        with self.assertRaises(ValueError) as cm:
+            add_expense("   ", 10, self.expenses_file_path)
+        self.assertIn("Description cannot be empty", str(cm.exception))
+
+    def test_add_expense_with_negative_amount(self):
+        # Users cannot add an expense with negative amount
+        with self.assertRaises(ValueError) as cm:
+            add_expense("Lunch", -5, self.expenses_file_path)
+        self.assertIn("Amount cannot be negative", str(cm.exception))
+
+    def test_add_expense_with_invalid_amount(self):
+        # Users cannot add an expense with invalid amount
+        with self.assertRaises(ValueError) as cm:
+            add_expense("Dinner", "invalid", self.expenses_file_path)
+        self.assertIn("Invalid amount", str(cm.exception))
+
     @unittest.skip("Not implemented yet")
     def test_update_expense(self):
         # Users can update an expense.
@@ -40,6 +58,20 @@ class TestExpenseTracker(unittest.TestCase):
         delete_expense(expense_id, self.expenses_file_path)
         expenses = read_expenses(self.expenses_file_path)
         self.assertEqual(len(expenses), 0)
+
+
+    def test_delete_expense_with_invalid_id(self):
+        # Users cannot delete an expense with invalid amount
+        add_expense("Item", 10, self.expenses_file_path)
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        delete_expense(9999, self.expenses_file_path)
+
+        sys.stdout = sys.__stdout__
+        output = captured_output.getvalue()
+        self.assertIn("Could not find an expense with id", output)
+
 
     def test_get_total_expenses(self):
         # Users can view all expenses.
@@ -89,6 +121,24 @@ class TestExpenseTracker(unittest.TestCase):
         sys.stdout = sys.__stdout__
         output = captured_output.getvalue()
         self.assertIn(f"Total expenses for {calendar.month_name[now.month]}: $100.00", output)
+
+    def test_list_expenses_output(self):
+        # Users can view all expenses
+        add_expense("Coffee", 3.5, self.expenses_file_path)
+        add_expense("Lunch", 12.0, self.expenses_file_path)
+
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        list_expenses(self.expenses_file_path)
+
+        sys.stdout = sys.__stdout__
+        output = captured_output.getvalue()
+
+        self.assertIn("Coffee", output)
+        self.assertIn("Lunch", output)
+        self.assertIn("ID", output)
+        self.assertIn("Amount", output)
 
 
 # Additional features:
