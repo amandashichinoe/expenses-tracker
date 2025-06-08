@@ -10,46 +10,63 @@ def add_expense(description, amount, expenses_file_path=EXPENSES_FILE_PATH):
     if not description.strip():
         raise ValueError("Description cannot be empty.")
 
-    try:
-        amount = float(amount)
-        if amount < 0:
-            raise ValueError("Amount cannot be negative.")
-    except ValueError as e:
-        raise ValueError(f"Invalid amount: {e}")
+    amount = validate_amount(amount)
     
     expenses = read_expenses(expenses_file_path)
-    ids = [exp.get("id", 0) for exp in expenses]
+    ids = [int(key) for key in expenses.keys()]
     expense_id = max(ids, default=0) + 1
     
-    expenses.append({
-        "id": expense_id,
+    expenses[str(expense_id)] = {
         "date": datetime.now().strftime(DATE_FORMAT),
         "description": description,
         "amount": float(amount)
-    })
+    }
 
     write_expenses(expenses, expenses_file_path)
     message = f"Expense added successfully (ID: {expense_id})"
     return message
 
+def update_expense(expense_id, description=None, amount=None, expenses_file_path=EXPENSES_FILE_PATH):
+    expenses = read_expenses(expenses_file_path)
+    expense_id = str(expense_id)
+    if expense_id not in expenses:
+        return "ID not found"
+    if description:
+        if not description.strip():
+            raise ValueError("Description cannot be empty.")
+        expenses[expense_id]["description"] = description
+    if amount:
+        expenses[expense_id]["amount"] = validate_amount(amount)
+    write_expenses(expenses, expenses_file_path)
+    return f"Expense {expense_id} updated successfully"
+
+
+def validate_amount(amount):
+    try:
+        amount = float(amount)
+        if amount < 0:
+            raise ValueError("Amount cannot be negative.")
+        return amount
+    except ValueError as e:
+        raise ValueError(f"Invalid amount: {e}")
+
 
 def list_expenses(expenses_file_path=EXPENSES_FILE_PATH):
     expenses = read_expenses(expenses_file_path)
-    message = ""
+
     if not expenses:
-        message = "No expenses found"
-        return message
+        return "No expenses found"
     # header
-    message += f"{'ID':<4} {'Date':<12} {'Description':<15} {'Amount':<7}"
+    message = [f"{'ID':<4} {'Date':<12} {'Description':<15} {'Amount':<7}"]
     # content
-    for expense in expenses:
-        message += f"\n{expense['id']:<4} {expense['date']:<12} {expense['description']:<15} ${expense['amount']:<7.2f}"
-    return message
+    for expense_id, expense in expenses.items():
+        message.append(f"{expense_id:<4} {expense['date']:<12} {expense['description']:<15} ${expense['amount']:<7.2f}")
+    return "\n".join(message)
 
 
 def get_total_expenses(expenses, month=None):
     total = 0
-    for exp in expenses:
+    for exp in expenses.values():
         try:
             if ("date" not in exp) or ("amount" not in exp):
                 continue
@@ -65,8 +82,7 @@ def get_total_expenses(expenses, month=None):
 
 def show_summary(month=None, expenses_file_path=EXPENSES_FILE_PATH):
     if (month is not None) and (month < 1 or month > 12):
-        message = "Invalid month. Please provide a number between 1 and 12."
-        return message
+        return "Invalid month. Please provide a number between 1 and 12."
     expenses = read_expenses(expenses_file_path)
     total_expenses = get_total_expenses(expenses, month)
     if month:
@@ -76,21 +92,19 @@ def show_summary(month=None, expenses_file_path=EXPENSES_FILE_PATH):
     return message
 
 
-def delete_expense(id, expenses_file_path=EXPENSES_FILE_PATH):
+def delete_expense(expense_id, expenses_file_path=EXPENSES_FILE_PATH):
     expenses = read_expenses(expenses_file_path)
-    for idx, exp in enumerate(expenses):
-        if exp.get("id") == id:
-            del expenses[idx]
-            write_expenses(expenses, expenses_file_path)
-            message = "Expense deleted successfully"
-            return message
-    message = f"Could not find an expense with id {id}"
-    return message
+    expense_id = str(expense_id)
+    if expense_id in expenses:
+        del expenses[expense_id]
+        write_expenses(expenses, expenses_file_path)
+        return "Expense deleted successfully"
+    return f"Could not find an expense with id {expense_id}"
 
 
 def read_expenses(expenses_file_path=EXPENSES_FILE_PATH):
     if not os.path.exists(expenses_file_path):
-        return []
+        return {}
     try:
         with open(expenses_file_path, "r", encoding="utf-8") as file:
             return json.load(file)
