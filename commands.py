@@ -23,34 +23,38 @@ def add_expense(description, amount, expenses_file_path=EXPENSES_FILE_PATH):
     
     expenses.append({
         "id": expense_id,
-        "date": datetime.now().strftime("%d-%m-%Y"),
+        "date": datetime.now().strftime(DATE_FORMAT),
         "description": description,
         "amount": float(amount)
     })
 
     write_expenses(expenses, expenses_file_path)
-    print(f"Expense added successfully (ID: {expense_id})")
+    message = f"Expense added successfully (ID: {expense_id})"
+    return message
 
 
 def list_expenses(expenses_file_path=EXPENSES_FILE_PATH):
     expenses = read_expenses(expenses_file_path)
+    message = ""
     if not expenses:
-        print("No expenses found")
-        return None
-    
+        message = "No expenses found"
+        return message
     # header
-    print(f"{'ID':<4} {'Date':<12} {'Description':<15} {'Amount':<7}")
+    message += f"{'ID':<4} {'Date':<12} {'Description':<15} {'Amount':<7}"
     # content
     for expense in expenses:
-        print(f"{expense['id']:<4} {expense['date']:<12} {expense['description']:<15} ${expense['amount']:<7.2f}")
+        message += f"\n{expense['id']:<4} {expense['date']:<12} {expense['description']:<15} ${expense['amount']:<7.2f}"
+    return message
 
 
 def get_total_expenses(expenses, month=None):
     total = 0
     for exp in expenses:
         try:
-            expense_date = datetime.strptime(exp["date"], "%d-%m-%Y")
-            if month and expense_date.month != month:
+            if ("date" not in exp) or ("amount" not in exp):
+                continue
+            expense_date = datetime.strptime(exp["date"], DATE_FORMAT)
+            if (month is not None) and (expense_date.month != month):
                 continue
             total += float(exp["amount"])
         except (ValueError, KeyError) as e:
@@ -60,15 +64,16 @@ def get_total_expenses(expenses, month=None):
 
 
 def show_summary(month=None, expenses_file_path=EXPENSES_FILE_PATH):
-    if month is not None and (month < 1 or month > 12):
-        print("Invalid month. Please provide a number between 1 and 12.")
-        return None
+    if (month is not None) and (month < 1 or month > 12):
+        message = "Invalid month. Please provide a number between 1 and 12."
+        return message
     expenses = read_expenses(expenses_file_path)
     total_expenses = get_total_expenses(expenses, month)
     if month:
-        print(f"Total expenses for {calendar.month_name[month]}: ${total_expenses:.2f}")
+        message = f"Total expenses for {calendar.month_name[month]}: ${total_expenses:.2f}"
     else:
-        print(f"Total expenses: ${total_expenses:.2f}")
+        message = f"Total expenses: ${total_expenses:.2f}"
+    return message
 
 
 def delete_expense(id, expenses_file_path=EXPENSES_FILE_PATH):
@@ -77,9 +82,10 @@ def delete_expense(id, expenses_file_path=EXPENSES_FILE_PATH):
         if exp.get("id") == id:
             del expenses[idx]
             write_expenses(expenses, expenses_file_path)
-            print("Expense deleted successfully")
-            return None     
-    print(f"Could not find an expense with id {id}")
+            message = "Expense deleted successfully"
+            return message
+    message = f"Could not find an expense with id {id}"
+    return message
 
 
 def read_expenses(expenses_file_path=EXPENSES_FILE_PATH):
@@ -89,24 +95,14 @@ def read_expenses(expenses_file_path=EXPENSES_FILE_PATH):
         with open(expenses_file_path, "r", encoding="utf-8") as file:
             return json.load(file)
     except json.JSONDecodeError:
-        print("Failed to read the expenses because the file is corrupt.")
-        choice = input("Do you want to delete the corrupt file and start a new one? (y/n)\n").strip().lower()
-        if choice.startswith("y"):
-            os.remove(expenses_file_path)
-            print("The corrupted file was deleted successfully")
-            return []
-        else:
-            raise RuntimeError("Operation cancelled. Please fix it manually to continue.")
+        raise RuntimeError("Expenses file is corrupt. Please fix or delete it manually.")
     except Exception as e:
         raise RuntimeError(f"Unexpected error reading file: {e}")
 
     
-
 def write_expenses(expenses, expenses_file_path = EXPENSES_FILE_PATH):
     try:
         with open(expenses_file_path, "w", encoding="utf-8") as file:
             json.dump(expenses, file, indent=4)
     except Exception as e:
         raise RuntimeError(f"Failed to write the expenses: {e}")
-
-    

@@ -1,6 +1,5 @@
 import calendar
 from datetime import datetime
-import io
 import os
 import shutil
 import sys
@@ -63,14 +62,8 @@ class TestExpenseTracker(unittest.TestCase):
     def test_delete_expense_with_invalid_id(self):
         # Users cannot delete an expense with invalid amount
         add_expense("Item", 10, self.expenses_file_path)
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-
-        delete_expense(9999, self.expenses_file_path)
-
-        sys.stdout = sys.__stdout__
-        output = captured_output.getvalue()
-        self.assertIn("Could not find an expense with id", output)
+        response = delete_expense(9999, self.expenses_file_path)
+        self.assertIn("Could not find an expense with id", response)
 
 
     def test_get_total_expenses(self):
@@ -86,13 +79,8 @@ class TestExpenseTracker(unittest.TestCase):
         # Users can view a summary of all expenses.
         add_expense("Groceries", 20, self.expenses_file_path)
         add_expense("Utilities", 30, self.expenses_file_path)
-        output = io.StringIO()
-        sys.stdout = output
-        show_summary(expenses_file_path=self.expenses_file_path)
-
-        sys.stdout = sys.__stdout__
-        message_displayed = output.getvalue()
-        self.assertIn("Total expenses: $50.00", message_displayed)
+        response = show_summary(expenses_file_path=self.expenses_file_path)
+        self.assertIn("Total expenses: $50.00", response)
 
     def test_get_summary_by_month(self):
         # Users can view a summary of expenses for a specific month (of current year).
@@ -112,28 +100,15 @@ class TestExpenseTracker(unittest.TestCase):
             },
         ]
         write_expenses(expenses, self.expenses_file_path)
-
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-
-        show_summary(month=now.month, expenses_file_path=self.expenses_file_path)
-
-        sys.stdout = sys.__stdout__
-        output = captured_output.getvalue()
-        self.assertIn(f"Total expenses for {calendar.month_name[now.month]}: $100.00", output)
+        response = show_summary(month=now.month, expenses_file_path=self.expenses_file_path)
+        self.assertIn(f"Total expenses for {calendar.month_name[now.month]}: $100.00", response)
 
     def test_list_expenses_output(self):
         # Users can view all expenses
         add_expense("Coffee", 3.5, self.expenses_file_path)
         add_expense("Lunch", 12.0, self.expenses_file_path)
 
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-
-        list_expenses(self.expenses_file_path)
-
-        sys.stdout = sys.__stdout__
-        output = captured_output.getvalue()
+        output = list_expenses(self.expenses_file_path)
 
         self.assertIn("Coffee", output)
         self.assertIn("Lunch", output)
