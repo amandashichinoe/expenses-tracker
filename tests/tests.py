@@ -13,15 +13,15 @@ from commands import add_expense, list_expenses, show_summary, delete_expense, r
 class TestExpenseTracker(unittest.TestCase):
     def setUp(self):
         self.test_dir = tempfile.mkdtemp()
-        self.expenses_file_path = os.path.join(self.test_dir, "test_expenses.json")
+        self.expenses_path = os.path.join(self.test_dir, "test_expenses.json")
 
     def tearDown(self):
         shutil.rmtree(self.test_dir)
 
     def test_add_expense(self):
         # Users can add an expense with a description and amount.
-        add_expense("Test Lunch", 25.90, self.expenses_file_path)
-        expenses = read_expenses(self.expenses_file_path)
+        add_expense("Test Lunch", 25.90, self.expenses_path)
+        expenses = read_expenses(self.expenses_path)
         self.assertEqual(len(expenses), 1)
         self.assertEqual(expenses["1"]["description"], "Test Lunch")
         self.assertEqual(expenses["1"]["amount"], 25.90)
@@ -29,105 +29,106 @@ class TestExpenseTracker(unittest.TestCase):
     def test_add_expense_with_empty_description(self):
         # Users cannot add an expense with empty description
         with self.assertRaises(ValueError) as cm:
-            add_expense("   ", 10, self.expenses_file_path)
+            add_expense("   ", 10, self.expenses_path)
         self.assertIn("Description cannot be empty", str(cm.exception))
 
     def test_add_expense_with_negative_amount(self):
         # Users cannot add an expense with negative amount
         with self.assertRaises(ValueError) as cm:
-            add_expense("Lunch", -5, self.expenses_file_path)
+            add_expense("Lunch", -5, self.expenses_path)
         self.assertIn("Amount cannot be negative", str(cm.exception))
 
     def test_add_expense_with_invalid_amount(self):
         # Users cannot add an expense with invalid amount
         with self.assertRaises(ValueError) as cm:
-            add_expense("Dinner", "invalid", self.expenses_file_path)
+            add_expense("Dinner", "invalid", self.expenses_path)
         self.assertIn("Invalid amount", str(cm.exception))
 
     def test_update_expense(self):
         # Users can update an expense.
-        add_expense("Lunch", 35, self.expenses_file_path)
-        response = update_expense("1", "Dinner", 42.90, self.expenses_file_path)
-        expenses = read_expenses(self.expenses_file_path)
+        add_expense("Lunch", 35, self.expenses_path)
+        response = update_expense(self.expenses_path, "1", "Dinner", 42.90)
+        expenses = read_expenses(self.expenses_path)
         self.assertEqual(len(expenses), 1)
         self.assertEqual(expenses["1"]["description"], "Dinner")
         self.assertEqual(expenses["1"]["amount"], 42.90)
 
     def test_update_description(self):
         # Users can update the description of an expense
-        add_expense("Lunch", 35, self.expenses_file_path)
-        response = update_expense("1", "Dinner", expenses_file_path=self.expenses_file_path)
-        expenses = read_expenses(self.expenses_file_path)
+        add_expense("Lunch", 35, self.expenses_path)
+        response = update_expense(self.expenses_path, "1", "Dinner")
+        expenses = read_expenses(self.expenses_path)
         self.assertEqual(len(expenses), 1)
         self.assertEqual(expenses["1"]["description"], "Dinner")
         self.assertEqual(expenses["1"]["amount"], 35)
 
     def test_update_amount(self):
         # Users can update the amount of an expense
-        add_expense("Lunch", 35, self.expenses_file_path)
-        response = update_expense("1", amount=42.90, expenses_file_path=self.expenses_file_path)
-        expenses = read_expenses(self.expenses_file_path)
+        add_expense("Lunch", 35, self.expenses_path)
+        response = update_expense(self.expenses_path, 1, amount=42.90)
+        expenses = read_expenses(self.expenses_path)
         self.assertEqual(len(expenses), 1)
         self.assertEqual(expenses["1"]["description"], "Lunch")
         self.assertEqual(expenses["1"]["amount"], 42.90)
 
     def test_update_invalid_description(self):
         # Users cannot update an expense with an invalid description
-        add_expense("Lunch", 35, self.expenses_file_path)
+        add_expense("Lunch", 35, self.expenses_path)
         with self.assertRaises(ValueError) as cm:
-            update_expense("1", "   ", 42.90, self.expenses_file_path)
+            update_expense(self.expenses_path, 1, "   ", 42.90)
         self.assertIn("Description cannot be empty", str(cm.exception))
 
     def test_update_invalid_amount(self):
         # Users cannot update an expense with an invalid amount
-        add_expense("Lunch", 35, self.expenses_file_path)
+        add_expense("Lunch", 35, self.expenses_path)
         with self.assertRaises(ValueError) as cm:
-            update_expense("1", "Dinner", "invalid", self.expenses_file_path)
+            update_expense(self.expenses_path, 1, "Dinner", "invalid")
         self.assertIn("Invalid amount", str(cm.exception))
     
     def test_update_negative_amount(self):
         # Users cannot update an expense with a negative amount
-        add_expense("Lunch", 35, self.expenses_file_path)
+        add_expense("Lunch", 35, self.expenses_path)
         with self.assertRaises(ValueError) as cm:
-            update_expense("1", "Dinner", -1, self.expenses_file_path)
+            update_expense(self.expenses_path, 1, "Dinner", -1)
         self.assertIn("Amount cannot be negative", str(cm.exception))
 
     def test_update_invalid_id(self):
         # Users cannot update an expense if the ID does not exist
-        add_expense("Lunch", 35, self.expenses_file_path)
-        response = update_expense("999", "Dinner", 42.90, self.expenses_file_path)
-        self.assertEqual(response, "ID not found")
+        add_expense("Lunch", 35, self.expenses_path)
+        with self.assertRaises(ValueError) as cm:
+            update_expense(self.expenses_path, 999, "Dinner", 42.90)
+        self.assertIn("Expense with ID 999 not found", str(cm.exception))
 
     def test_delete_expense(self):
         # Users can delete an expense.
-        add_expense("To be deleted", 1, self.expenses_file_path)
-        expenses = read_expenses(self.expenses_file_path)
-        delete_expense("1", self.expenses_file_path)
-        expenses = read_expenses(self.expenses_file_path)
+        add_expense("To be deleted", 1, self.expenses_path)
+        expenses = read_expenses(self.expenses_path)
+        delete_expense(1, self.expenses_path)
+        expenses = read_expenses(self.expenses_path)
         self.assertEqual(len(expenses), 0)
 
 
     def test_delete_expense_with_invalid_id(self):
         # Users cannot delete an expense with invalid id
-        add_expense("Item", 10, self.expenses_file_path)
-        response = delete_expense(9999, self.expenses_file_path)
+        add_expense("Item", 10, self.expenses_path)
+        response = delete_expense(9999, self.expenses_path)
         self.assertIn("Could not find an expense with id", response)
 
 
     def test_get_total_expenses(self):
         # Users can view all expenses.
-        add_expense("Food", 25.50, self.expenses_file_path)
-        add_expense("Transport", 10.00, self.expenses_file_path)
-        expenses = read_expenses(self.expenses_file_path)
+        add_expense("Food", 25.50, self.expenses_path)
+        add_expense("Transport", 10.00, self.expenses_path)
+        expenses = read_expenses(self.expenses_path)
 
         total = get_total_expenses(expenses)
         self.assertEqual(total, 35.50)
 
     def test_get_summary_all_expenses(self):
         # Users can view a summary of all expenses.
-        add_expense("Groceries", 20, self.expenses_file_path)
-        add_expense("Utilities", 30, self.expenses_file_path)
-        response = show_summary(expenses_file_path=self.expenses_file_path)
+        add_expense("Groceries", 20, self.expenses_path)
+        add_expense("Utilities", 30, self.expenses_path)
+        response = show_summary(expenses_path=self.expenses_path)
         self.assertIn("Total expenses: $50.00", response)
 
     def test_get_summary_by_month(self):
@@ -145,17 +146,17 @@ class TestExpenseTracker(unittest.TestCase):
                 "amount": 50.00
             },
         }
-        write_expenses(expenses, self.expenses_file_path)
-        response = show_summary(month=now.month, expenses_file_path=self.expenses_file_path)
+        write_expenses(expenses, self.expenses_path)
+        response = show_summary(month=now.month, expenses_path=self.expenses_path)
         self.assertIn(f"Total expenses for {calendar.month_name[now.month]}: $100.00", response)
 
 
     def test_list_expenses_output(self):
         # Users can view all expenses
-        add_expense("Coffee", 3.5, self.expenses_file_path)
-        add_expense("Lunch", 12.0, self.expenses_file_path)
+        add_expense("Coffee", 3.5, self.expenses_path)
+        add_expense("Lunch", 12.0, self.expenses_path)
 
-        output = list_expenses(self.expenses_file_path)
+        output = list_expenses(self.expenses_path)
 
         self.assertIn("Coffee", output)
         self.assertIn("Lunch", output)

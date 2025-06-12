@@ -1,6 +1,8 @@
 import argparse
 import sys
-from commands import add_expense, list_expenses, show_summary, delete_expense
+from commands import add_expense, list_expenses, show_summary, update_expense, delete_expense
+
+DEFAULT_EXPENSES_PATH = "data/expenses.json"
 
 def build_parser():
 
@@ -36,6 +38,11 @@ def build_parser():
     parser_summary = subparsers.add_parser('summary', help='Show summary of expenses')
     parser_summary.add_argument('--month', type=int, choices=range(1,13), help='Filter the expenses for a specific month (of current year)')
 
+    parser_update = subparsers.add_parser('update', help='Update an existing expense')
+    parser_update.add_argument('--expense_id', required=True, type=int, help='ID of the expense to be updated')
+    parser_update.add_argument('--description', type=str, help='New description')
+    parser_update.add_argument('--amount', type=str, help='New amount')
+
     return parser
 
 def main():
@@ -48,16 +55,20 @@ def main():
     try:
         match args.command:
             case 'add':
-                result = add_expense(args.description, args.amount)
+                result = add_expense(args.description, args.amount, DEFAULT_EXPENSES_PATH)
                 print(result)
             case 'list':
-                result = list_expenses()
+                result = list_expenses(DEFAULT_EXPENSES_PATH)
                 print(result)
             case 'summary':
-                result = show_summary(args.month)
+                result = show_summary(DEFAULT_EXPENSES_PATH, args.month)
                 print(result)
+            case 'update':
+                description = args.description if args.description else None
+                amount = args.amount if args.amount else None
+                result = update_expense(DEFAULT_EXPENSES_PATH, args.expense_id, description, amount)
             case 'delete':
-                result = delete_expense(args.id)
+                result = delete_expense(args.id, DEFAULT_EXPENSES_PATH)
                 print(result)
             case _:
                 parser.print_help()
