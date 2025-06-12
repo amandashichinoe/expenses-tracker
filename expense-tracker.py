@@ -43,6 +43,9 @@ def build_parser():
     parser_update.add_argument('--description', type=str, help='New description')
     parser_update.add_argument('--amount', type=str, help='New amount')
 
+    for subparser in [parser_add, parser_delete, parser_list, parser_summary, parser_update]:
+        subparser.add_argument('--expenses_path', type=str, default=DEFAULT_EXPENSES_PATH, help=argparse.SUPPRESS)
+
     return parser
 
 def main():
@@ -55,20 +58,20 @@ def main():
     try:
         match args.command:
             case 'add':
-                result = add_expense(args.description, args.amount, DEFAULT_EXPENSES_PATH)
+                result = add_expense(args.description, args.amount, args.expenses_path)
                 print(result)
             case 'list':
-                result = list_expenses(DEFAULT_EXPENSES_PATH)
+                result = list_expenses(args.expenses_path)
                 print(result)
             case 'summary':
-                result = show_summary(DEFAULT_EXPENSES_PATH, args.month)
+                result = show_summary(args.expenses_path, args.month)
                 print(result)
             case 'update':
                 description = args.description if args.description else None
                 amount = args.amount if args.amount else None
-                result = update_expense(DEFAULT_EXPENSES_PATH, args.expense_id, description, amount)
+                result = update_expense(args.expenses_path, args.expense_id, description, amount)
             case 'delete':
-                result = delete_expense(args.id, DEFAULT_EXPENSES_PATH)
+                result = delete_expense(args.id, args.expenses_path)
                 print(result)
             case _:
                 parser.print_help()
