@@ -31,8 +31,8 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(expenses["1"]["description"], "Lunch")
 
     def test_list_expenses_cli(self):
-        self.run_cli(["add", "--description", "Coffee", "--amount", "5"])
-        result = self.run_cli(["list"])
+        self.run_cli(["add", "--description", "Coffee", "--amount", "5", "--category", "Food"])
+        result = self.run_cli(["list", "--category", "Food"])
         self.assertEqual(result.returncode, 0)
         self.assertIn("Coffee", result.stdout)
 
@@ -41,6 +41,11 @@ class TestCLI(unittest.TestCase):
         result = self.run_cli(["summary"])
         self.assertEqual(result.returncode, 0)
         self.assertIn("Total expenses", result.stdout)
+
+    def test_summary_invalid_month_argument(self):
+        result = self.run_cli(["summary", "--month", "0"])
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("invalid choice", result.stderr)
 
     def test_delete_expense_cli(self):
         self.run_cli(["add", "--description", "ToDelete", "--amount", "1"])
@@ -58,3 +63,13 @@ class TestCLI(unittest.TestCase):
             expenses = json.load(f)
         self.assertEqual(expenses["1"]["description"], "New")
         self.assertEqual(expenses["1"]["amount"], 20.0)
+
+    def test_no_command_shows_help(self):
+        result = self.run_cli([])
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("usage:", result.stderr)
+
+    def test_invalid_command(self):
+        result = self.run_cli(["nonexistent"])
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("usage:", result.stderr)

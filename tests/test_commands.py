@@ -178,11 +178,13 @@ class TestExpenseTracker(unittest.TestCase):
         self.assertIn(f"Total expenses for {calendar.month_name[now.month]}: $300.00", response)
 
     def test_summary_by_category(self):
+        # Users can view a summary of expenses for a specific category
         self._create_expenses()
         response = show_summary(expenses_path=self.expenses_path, category="Food")
         self.assertIn(f"Total expenses with Food: $150.00", response)
 
     def test_summary_by_category_and_month(self):
+        # Users can view a summary of expenses for a specific month and category
         now = datetime.now()
         self._create_expenses()
         response = show_summary(month=now.month, expenses_path=self.expenses_path, category="Food")

@@ -105,16 +105,14 @@ def show_summary(expenses_path, month=None, category=None):
         return "Invalid month. Please provide a number between 1 and 12."
     expenses = read_expenses(expenses_path)
     total_expenses = get_total_expenses(expenses, month, category)
-    if month:
-        if category is not None:
-            message = f"Total expenses with {category} for {calendar.month_name[month]}: ${total_expenses:.2f}"
-        else:
-            message = f"Total expenses for {calendar.month_name[month]}: ${total_expenses:.2f}"
-    else:
-        if category is not None:
-            message = f"Total expenses with {category}: ${total_expenses:.2f}"
-        else:
-            message = f"Total expenses: ${total_expenses:.2f}"
+
+    message = ["Total expenses"]
+    if category is not None:
+        message.append(f" with {category}")
+    if month is not None:
+        message.append(f" for {calendar.month_name[month]}")
+    message = f"{''.join(message)}: ${total_expenses:.2f}"
+
     return message
 
 
