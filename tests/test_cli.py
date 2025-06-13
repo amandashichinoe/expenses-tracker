@@ -21,7 +21,7 @@ class TestCLI(unittest.TestCase):
         return result
 
     def test_add_expense_cli(self):
-        result = self.run_cli(["add", "--description", "Lunch", "--amount", "15.5"])
+        result = self.run_cli(["add", "--description", "Lunch", "--amount", "15.5", "--category", "Food"])
         self.assertEqual(result.returncode, 0)
         self.assertIn("Expense added successfully", result.stdout)
 
@@ -52,6 +52,7 @@ class TestCLI(unittest.TestCase):
         self.run_cli(["add", "--description", "Old", "--amount", "10"])
         result = self.run_cli(["update", "--expense_id", "1", "--description", "New", "--amount", "20"])
         self.assertEqual(result.returncode, 0)
+        self.assertIn("updated successfully", result.stdout)
 
         with open(self.expenses_path) as f:
             expenses = json.load(f)

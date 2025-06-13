@@ -5,11 +5,14 @@ from datetime import datetime
 
 DATE_FORMAT = "%d-%m-%Y"
 
-def add_expense(description, amount, expenses_path):
+def add_expense(expenses_path, description, amount, category=None):
     if not description.strip():
         raise ValueError("Description cannot be empty.")
 
     amount = validate_amount(amount)
+
+    if not category or not category.strip():
+        category = "Uncategorized"
     
     expenses = read_expenses(expenses_path)
     ids = [int(key) for key in expenses.keys()]
@@ -18,14 +21,18 @@ def add_expense(description, amount, expenses_path):
     expenses[str(expense_id)] = {
         "date": datetime.now().strftime(DATE_FORMAT),
         "description": description,
-        "amount": float(amount)
+        "amount": float(amount),
+        "category": category
     }
 
     write_expenses(expenses, expenses_path)
     message = f"Expense added successfully (ID: {expense_id})"
     return message
 
-def update_expense(expenses_path, expense_id, description=None, amount=None):
+def update_expense(expenses_path, expense_id, description=None, amount=None, category=None):
+    if description is None and amount is None and category is None:
+        raise ValueError("At least one field (description, amount, category) must be provided.")
+    
     expenses = read_expenses(expenses_path)
     expense_id = str(expense_id)
     if expense_id not in expenses:
@@ -36,8 +43,12 @@ def update_expense(expenses_path, expense_id, description=None, amount=None):
         expenses[expense_id]["description"] = description
     if amount is not None:
         expenses[expense_id]["amount"] = validate_amount(amount)
+    if category is not None:
+        if not category.strip():
+            category = "Uncategorized"
+        expenses[expense_id]["category"] = category
     write_expenses(expenses, expenses_path)
-    return f"Expense {expense_id} updated successfully"
+    return f"Expense updated successfully (ID: {expense_id})"
 
 
 def validate_amount(amount):
@@ -50,20 +61,28 @@ def validate_amount(amount):
         raise ValueError(f"Invalid amount: {e}")
 
 
-def list_expenses(expenses_path):
+def list_expenses(expenses_path, category=None):
     expenses = read_expenses(expenses_path)
 
     if not expenses:
         return "No expenses found"
-    header = [f"{'ID':<4} {'Date':<12} {'Description':<15} {'Amount':<7}"]
+    if category is not None:
+        expenses = filter_category(expenses, category)
+
+    header = [f"{'ID':<4} {'Date':<12} {'Description':<15} {'Amount':<7} {'Category':<10}"]
     rows = [
-        f"{expense_id:<4} {expense['date']:<12} {expense['description']:<15} ${expense['amount']:<7.2f}"
+        f"{expense_id:<4} {expense['date']:<12} {expense['description']:<15} ${expense['amount']:<7.2f} {expense['category']}"
         for expense_id, expense in expenses.items()
     ]
     return "\n".join(header + rows)
 
 
-def get_total_expenses(expenses, month=None):
+def filter_category(expenses, category):
+    expenses = {expense_id: exp for expense_id, exp in expenses.items() if exp.get("category") == category}
+    return expenses
+
+
+def get_total_expenses(expenses, month=None, category=None):
     total = 0
     for exp in expenses.values():
         try:
@@ -72,6 +91,8 @@ def get_total_expenses(expenses, month=None):
             expense_date = datetime.strptime(exp["date"], DATE_FORMAT)
             if (month is not None) and (expense_date.month != month):
                 continue
+            if category is not None and category != exp["category"]:
+                continue
             total += float(exp["amount"])
         except (ValueError, KeyError) as e:
             print(f'Invalid data. Skipping expense {exp}. Error: {e}')
@@ -79,25 +100,31 @@ def get_total_expenses(expenses, month=None):
     return round(total, 2)
 
 
-def show_summary(expenses_path, month=None):
+def show_summary(expenses_path, month=None, category=None):
     if (month is not None) and (month < 1 or month > 12):
         return "Invalid month. Please provide a number between 1 and 12."
     expenses = read_expenses(expenses_path)
-    total_expenses = get_total_expenses(expenses, month)
+    total_expenses = get_total_expenses(expenses, month, category)
     if month:
-        message = f"Total expenses for {calendar.month_name[month]}: ${total_expenses:.2f}"
+        if category is not None:
+            message = f"Total expenses with {category} for {calendar.month_name[month]}: ${total_expenses:.2f}"
+        else:
+            message = f"Total expenses for {calendar.month_name[month]}: ${total_expenses:.2f}"
     else:
-        message = f"Total expenses: ${total_expenses:.2f}"
+        if category is not None:
+            message = f"Total expenses with {category}: ${total_expenses:.2f}"
+        else:
+            message = f"Total expenses: ${total_expenses:.2f}"
     return message
 
 
-def delete_expense(expense_id, expenses_path):
+def delete_expense(expenses_path, expense_id):
     expenses = read_expenses(expenses_path)
     expense_id = str(expense_id)
     if expense_id in expenses:
         del expenses[expense_id]
         write_expenses(expenses, expenses_path)
-        return "Expense deleted successfully"
+        return f"Expense deleted successfully (ID: {expense_id})"
     return f"Could not find an expense with id {expense_id}"
 
 
