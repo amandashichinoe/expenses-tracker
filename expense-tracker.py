@@ -3,6 +3,7 @@ import sys
 from commands import add_expense, list_expenses, show_summary, update_expense, delete_expense
 
 DEFAULT_EXPENSES_PATH = "data/expenses.json"
+DEFAULT_BUDGET_PATH = "data/budget.json"
 
 def build_parser():
 
@@ -49,6 +50,7 @@ def build_parser():
 
     for subparser in [parser_add, parser_delete, parser_list, parser_summary, parser_update]:
         subparser.add_argument('--expenses_path', type=str, default=DEFAULT_EXPENSES_PATH, help=argparse.SUPPRESS)
+        subparser.add_argument('--budget_path', type=str, default=DEFAULT_BUDGET_PATH, help=argparse.SUPPRESS)
 
     return parser
 
@@ -62,8 +64,10 @@ def main():
     try:
         match args.command:
             case 'add':
-                result = add_expense(args.expenses_path, args.description, args.amount, args.category)
-                print(result)
+                result = add_expense(args.expenses_path, args.budget_path, args.description, args.amount, args.category)
+                print(result["message"])
+                if result["warning"]:
+                    print(result["warning"])
             case 'list':
                 result = list_expenses(args.expenses_path, args.category)
                 print(result)
@@ -71,8 +75,10 @@ def main():
                 result = show_summary(args.expenses_path, args.month, args.category)
                 print(result)
             case 'update':
-                result = update_expense(args.expenses_path, args.expense_id, args.description, args.amount, args.category)
-                print(result)
+                result = update_expense(args.expenses_path, args.budget_path, args.expense_id, args.description, args.amount, args.category)
+                print(result["message"])
+                if result["warning"]:
+                    print(result["warning"])
             case 'delete':
                 result = delete_expense(args.expenses_path, args.id)
                 print(result)
