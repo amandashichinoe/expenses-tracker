@@ -14,6 +14,7 @@ class TestExpenseTracker(unittest.TestCase):
         self.test_dir = tempfile.mkdtemp()
         self.expenses_path = os.path.join(self.test_dir, "test_expenses.json")
         self.budget_path = os.path.join(self.test_dir, "test_budgets.json")
+        self.export_path = os.path.join(self.test_dir, "test_expenses.csv")
 
     def tearDown(self):
         shutil.rmtree(self.test_dir)
@@ -260,7 +261,7 @@ class TestExpenseTracker(unittest.TestCase):
         self.assertIn("Expense updated successfully", response["message"])
         self.assertEqual(None, response["warning"])
 
-    def test_update_expenspe_when_budget_is_not_set(self):
+    def test_update_expense_when_budget_is_not_set(self):
         # A warning is shown if a budget was not set for the expense month.
         response = add_expense(self.expenses_path, self.budget_path, "Fancy dinner", 99, "Food")
         self.assertIn("Expense added successfully", response["message"])
@@ -268,3 +269,12 @@ class TestExpenseTracker(unittest.TestCase):
         response = update_expense(self.expenses_path, self.budget_path, expense_id=1, amount=250)
         self.assertIn("Expense updated successfully", response["message"])
         self.assertIn("No budget configured", response["warning"])
+
+    def test_export_expenses(self):
+        add_expense(self.expenses_path, self.budget_path, "Fancy dinner", 99, "Food")
+        response = export_expenses(self.expenses_path, self.export_path)
+        self.assertIn("The expenses were exported successfully", response)
+
+    def test_export_with_no_expenses(self):
+        response = export_expenses(self.expenses_path, self.export_path)
+        self.assertIn("No expenses to export", response)
