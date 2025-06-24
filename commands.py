@@ -1,4 +1,5 @@
 import calendar
+import csv
 import json
 import os
 from datetime import datetime
@@ -158,6 +159,20 @@ def check_if_budget_exceed(budget_path, expenses, month=None):
     if total_expenses > budget:
         return f"[WARN] You exceeded the budget for {calendar.month_name[month]}"
     return None
+
+def export_expenses(expenses_path, output_path):
+    expenses = read_json(expenses_path)
+    if not expenses:
+        return f"No expenses to export."
+    write_csv(expenses, output_path)
+    return f"The expenses were exported successfully. Path: {output_path}"
+
+def write_csv(data, file_path):
+    with open(file_path, "w", encoding="utf-8", newline="") as csv_file:
+        fieldnames = ["date", "description", "amount", "category"] 
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(data.values())
 
 def read_json(file_path):
     if not os.path.exists(file_path):

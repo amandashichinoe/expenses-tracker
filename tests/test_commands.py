@@ -7,7 +7,7 @@ import unittest
 
 from commands import (add_expense, list_expenses, show_summary, delete_expense, 
                       read_json, write_json, update_expense,
-                      set_budget)
+                      set_budget, export_expenses)
 
 class TestExpenseTracker(unittest.TestCase):
     def setUp(self):
@@ -268,13 +268,3 @@ class TestExpenseTracker(unittest.TestCase):
         response = update_expense(self.expenses_path, self.budget_path, expense_id=1, amount=250)
         self.assertIn("Expense updated successfully", response["message"])
         self.assertIn("No budget configured", response["warning"])
-
-
-
-        
-
-
-# Additional features:
-# Add expense categories and allow users to filter expenses by category.
-# Allow users to set a budget for each month and show a warning when the user exceeds the budget.
-# Allow users to export expenses to a CSV file.
