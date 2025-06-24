@@ -10,7 +10,8 @@ class TestCLI(unittest.TestCase):
     def setUp(self):
         self.script = os.path.abspath("expense-tracker.py")
         self.test_dir = tempfile.mkdtemp()
-        self.expenses_path = os.path.join(self.test_dir, "expenses.json")
+        self.expenses_path = os.path.join(self.test_dir, "test_expenses.json")
+        self.budget_path = os.path.join(self.test_dir, "test_budgets.json")
 
     def tearDown(self):
         shutil.rmtree(self.test_dir)
@@ -63,6 +64,11 @@ class TestCLI(unittest.TestCase):
             expenses = json.load(f)
         self.assertEqual(expenses["1"]["description"], "New")
         self.assertEqual(expenses["1"]["amount"], 20.0)
+
+    def test_set_budget_cli(self):
+        result = self.run_cli(["set-budget", "--month", "6", "--value", "500"])
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("Successfully configured the budget for month 6 (value: 500.0)", result.stdout)
 
     def test_no_command_shows_help(self):
         result = self.run_cli([])
