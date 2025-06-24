@@ -53,10 +53,10 @@ def build_parser():
     parser_set_budget.add_argument('--month', required=True, type=int, help='The numeric value corresponding to the month you want to set the budget')
     parser_set_budget.add_argument('--value', required=True, type=float, help='The value for the budget')
 
-    parser_set_budget = subparsers.add_parser('export', help='Export the expenses to a CSV file')
-    parser_set_budget.add_argument('--file-path', type=str, default=DEFAULT_EXPORT_PATH, help='The path (including the file name) where you want to export the CSV file')
+    parser_export_expense = subparsers.add_parser('export', help='Export the expenses to a CSV file')
+    parser_export_expense.add_argument('--file-path', type=str, default=DEFAULT_EXPORT_PATH, help='The path (including the file name) where you want to export the CSV file')
 
-    for subparser in [parser_add, parser_delete, parser_list, parser_summary, parser_update, parser_set_budget]:
+    for subparser in [parser_add, parser_delete, parser_list, parser_summary, parser_update, parser_set_budget, parser_export_expense]:
         subparser.add_argument('--expenses_path', type=str, default=DEFAULT_EXPENSES_PATH, help=argparse.SUPPRESS)
         subparser.add_argument('--budget_path', type=str, default=DEFAULT_BUDGET_PATH, help=argparse.SUPPRESS)
 

@@ -12,6 +12,7 @@ class TestCLI(unittest.TestCase):
         self.test_dir = tempfile.mkdtemp()
         self.expenses_path = os.path.join(self.test_dir, "test_expenses.json")
         self.budget_path = os.path.join(self.test_dir, "test_budgets.json")
+        self.export_path = os.path.join(self.test_dir, "test_expenses.csv")
 
     def tearDown(self):
         shutil.rmtree(self.test_dir)
@@ -69,6 +70,17 @@ class TestCLI(unittest.TestCase):
         result = self.run_cli(["set-budget", "--month", "6", "--value", "500"])
         self.assertEqual(result.returncode, 0)
         self.assertIn("Successfully configured the budget for month 6 (value: 500.0)", result.stdout)
+
+    def test_export_expenses(self):
+        self.run_cli(["add", "--description", "Old", "--amount", "10"])
+        result = self.run_cli(["export", "--file-path", self.export_path])
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("The expenses were exported successfully", result.stdout)
+
+    def test_export_with_no_expenses(self):
+        result = self.run_cli(["export", "--file-path", self.export_path])
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("No expenses to export", result.stdout)
 
     def test_no_command_shows_help(self):
         result = self.run_cli([])
