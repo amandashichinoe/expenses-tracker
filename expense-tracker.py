@@ -99,8 +99,14 @@ def main():
             case _:
                 parser.print_help()
                 sys.exit(1)
+    except ValueError as e:
+        print(f"[ERROR] Input error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except RuntimeError as e:
+        print(f"[ERROR] Application error: {e}", file=sys.stderr)
+        sys.exit(1)
     except Exception as e:
-        print(f"[ERROR] {e}")
+        print(f"[ERROR] An unexpected error occurred: {e}", file=sys.stderr)
         sys.exit(1)
 
 if __name__ == '__main__':
